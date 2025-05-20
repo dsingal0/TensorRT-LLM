@@ -1,14 +1,28 @@
 import asyncio
 from collections import defaultdict
 from functools import partial
-from typing import (Any, Callable, Coroutine, Dict, Iterable, List, Literal,
-                    Optional, Tuple, TypeAlias, TypedDict, Union, cast)
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypeAlias,
+    TypedDict,
+    Union,
+    cast,
+)
 
-from openai.types.chat import ChatCompletionContentPartImageParam
-from openai.types.chat import \
-    ChatCompletionContentPartParam as OpenAIChatCompletionContentPartParam
-from openai.types.chat import (ChatCompletionContentPartTextParam,
-                               ChatCompletionMessageParam)
+from openai.types.chat import (
+    ChatCompletionContentPartImageParam,
+    ChatCompletionContentPartTextParam,
+    ChatCompletionMessageParam,
+)
+from openai.types.chat import ChatCompletionContentPartParam as OpenAIChatCompletionContentPartParam
 from transformers import AutoConfig, ProcessorMixin
 from typing_extensions import Required
 
@@ -19,25 +33,28 @@ from tensorrt_llm.logger import logger
 
 class VideoURL(TypedDict):
     """Type definition for video URL structure."""
+
     url: Required[str]
 
 
 class ChatCompletionContentPartVideoParam(TypedDict, total=False):
     """Type definition for video content part parameters."""
+
     video_url: Required[VideoURL]
     type: Required[Literal["video_url"]]
 
 
 class ConversationMessage(TypedDict):
     """Type definition for conversation message structure."""
+
     role: str
     content: str
 
 
 # Type Aliases and Constants
 ChatCompletionContentPartParam: TypeAlias = Union[
-    OpenAIChatCompletionContentPartParam, ChatCompletionContentPartVideoParam,
-    str]
+    OpenAIChatCompletionContentPartParam, ChatCompletionContentPartVideoParam, str
+]
 
 VALID_MESSAGE_CONTENT_MM_PART_TYPES = ["text", "image_url", "video_url"]
 
@@ -46,15 +63,11 @@ _TextParser = partial(cast, ChatCompletionContentPartTextParam)
 _ImageParser = partial(cast, ChatCompletionContentPartImageParam)
 _VideoParser = partial(cast, ChatCompletionContentPartVideoParam)
 
-MM_PARSER_MAP: dict[str, Callable[[ChatCompletionContentPartParam], Union[
-    str, dict[str, str]]]] = {
-        "text":
-        lambda part: _TextParser(part).get("text", None),
-        "image_url":
-        lambda part: _ImageParser(part).get("image_url", {}).get("url", None),
-        "video_url":
-        lambda part: _VideoParser(part).get("video_url", {}).get("url", None),
-    }
+MM_PARSER_MAP: dict[str, Callable[[ChatCompletionContentPartParam], Union[str, dict[str, str]]]] = {
+    "text": lambda part: _TextParser(part).get("text", None),
+    "image_url": lambda part: _ImageParser(part).get("image_url", {}).get("url", None),
+    "video_url": lambda part: _VideoParser(part).get("video_url", {}).get("url", None),
+}
 
 
 class AsyncMultimodalDataTracker:
@@ -70,13 +83,9 @@ class AsyncMultimodalDataTracker:
         if not self.mm_data:
             return None
 
-        return {
-            modality: await asyncio.gather(*items)
-            for modality, items in self.mm_data.items()
-        }
+        return {modality: await asyncio.gather(*items) for modality, items in self.mm_data.items()}
 
-    def retrieve_multimodal_placeholder(self, modality: str,
-                                        current_count: int) -> Optional[str]:
+    def retrieve_multimodal_placeholder(self, modality: str, current_count: int) -> Optional[str]:
         """Get the appropriate placeholder for a given modality and model type."""
         model_type = self.model_config.model_type
 
@@ -94,8 +103,7 @@ class AsyncMultimodalDataTracker:
 
     def add_mm_data(self, media_type: str, data: Coroutine):
         current_count = len(self.mm_data[media_type]) + 1
-        placeholder = self.retrieve_multimodal_placeholder(
-            media_type, current_count)
+        placeholder = self.retrieve_multimodal_placeholder(media_type, current_count)
         self.mm_data[media_type].append(data)
         if placeholder:
             self.mm_placeholder_counts[placeholder] += 1
@@ -105,8 +113,7 @@ class AsyncMultimodalDataTracker:
         return dict(self.mm_placeholder_counts)
 
 
-def add_multimodal_placeholders(text_prompt: str,
-                                mm_placeholder_counts: dict[str, int]) -> str:
+def add_multimodal_placeholders(text_prompt: str, mm_placeholder_counts: dict[str, int]) -> str:
     """Add multimodal placeholders to the text prompt."""
     placeholders = []
     for placeholder in mm_placeholder_counts:
@@ -115,7 +122,7 @@ def add_multimodal_placeholders(text_prompt: str,
 
 
 def _parse_chat_message_content_mm_part(
-    part: ChatCompletionContentPartParam
+    part: ChatCompletionContentPartParam,
 ) -> tuple[str, Union[str, dict[str, str]]]:
     """Parse a single multimodal part of a chat message."""
     assert isinstance(part, dict)
@@ -143,7 +150,9 @@ def parse_chat_message_content_part(
     if part_type in VALID_MESSAGE_CONTENT_MM_PART_TYPES and content is None:
         logger.warning(
             "Skipping multimodal part '%s' (type: '%s') with empty / unparsable content.",
-            part, part_type)
+            part,
+            part_type,
+        )
         return None
 
     if part_type == "text":
@@ -194,8 +203,7 @@ def parse_chat_message_content_parts(
     mm_placeholder_counts = mm_data_tracker.mm_data_counts()
 
     if mm_placeholder_counts:
-        text_prompt = add_multimodal_placeholders(text_prompt,
-                                                  mm_placeholder_counts)
+        text_prompt = add_multimodal_placeholders(text_prompt, mm_placeholder_counts)
 
     return [ConversationMessage(role=role, content=text_prompt)]
 
@@ -211,9 +219,7 @@ def parse_chat_message_content(
     if content is None:
         content = []
     elif isinstance(content, str):
-        content = [
-            ChatCompletionContentPartTextParam(type="text", text=content)
-        ]
+        content = [ChatCompletionContentPartTextParam(type="text", text=content)]
 
     result = parse_chat_message_content_parts(
         role,
@@ -226,8 +232,9 @@ def parse_chat_message_content(
 def parse_chat_messages_coroutines(
     messages: List[ChatCompletionMessageParam],
     model_config: AutoConfig,
-) -> Tuple[List[ConversationMessage], Optional[Coroutine[
-        Any, Any, Optional[Dict[str, List[Any]]]]]]:
+) -> Tuple[
+    List[ConversationMessage], Optional[Coroutine[Any, Any, Optional[Dict[str, List[Any]]]]]
+]:
     """Parse multiple chat messages and return conversation and coroutine."""
     conversation = []
     mm_data_tracker = AsyncMultimodalDataTracker(model_config)
@@ -246,21 +253,19 @@ def resolve_hf_chat_template(
     tools: Optional[list[dict[str, Any]]],
 ) -> Optional[str]:
     """Resolve the appropriate chat template to use."""
-
     # 1. If chat_template is not None, return it
     if chat_template is not None:
         return chat_template
 
     # 2. If tool is not provided, use the processor's default chat template
-    if not tools and processor and hasattr(processor, 'chat_template'):
+    if not tools and processor and hasattr(processor, "chat_template"):
         return processor.chat_template
 
     # 3. If tool is provided, use the tool
     try:
         return tokenizer.get_chat_template(chat_template, tools=tools)
     except Exception:
-        logger.debug("Failed to load AutoTokenizer chat template for %s",
-                     tokenizer.name_or_path)
+        logger.debug("Failed to load AutoTokenizer chat template for %s", tokenizer.name_or_path)
     return None
 
 
@@ -276,12 +281,10 @@ def apply_chat_template(
     chat_template_kwargs: Optional[dict[str, Any]] = None,
 ) -> str:
     """Apply chat template to the conversation."""
-    hf_chat_template = resolve_hf_chat_template(tokenizer, processor,
-                                                chat_template, tools)
+    hf_chat_template = resolve_hf_chat_template(tokenizer, processor, chat_template, tools)
 
     if hf_chat_template is None:
-        raise ValueError(
-            "No chat template found for the given tokenizer and tools.")
+        raise ValueError("No chat template found for the given tokenizer and tools.")
 
     return tokenizer.apply_chat_template(
         conversation=conversation,

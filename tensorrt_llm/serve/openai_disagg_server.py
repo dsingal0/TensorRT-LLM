@@ -18,12 +18,14 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 # yapf: disable
 from tensorrt_llm.executor import CppExecutorError
 from tensorrt_llm.llmapi.disagg_utils import RouterConfig
-from tensorrt_llm.serve.openai_protocol import (ChatCompletionRequest,
-                                                ChatCompletionResponse,
-                                                CompletionRequest,
-                                                CompletionResponse,
-                                                DisaggregatedParams,
-                                                ErrorResponse)
+from tensorrt_llm.serve.openai_protocol import (
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    CompletionRequest,
+    CompletionResponse,
+    DisaggregatedParams,
+    ErrorResponse,
+)
 from tensorrt_llm.serve.router import create_router
 from tensorrt_llm.version import __version__ as VERSION
 

@@ -2,27 +2,35 @@ from dataclasses import dataclass, field
 from typing import List, Literal, Optional, Tuple, Union
 
 from .._utils import nvtx_range_debug
-from ..executor import (DetokenizedGenerationResultBase, GenerationResult,
-                        GenerationResultBase)
+from ..executor import DetokenizedGenerationResultBase, GenerationResult, GenerationResultBase
 from ..executor.postproc_worker import PostprocArgs
-from ..llmapi.reasoning_parser import (BaseReasoningParser,
-                                       ReasoningParserFactory)
+from ..llmapi.reasoning_parser import BaseReasoningParser, ReasoningParserFactory
 from ..llmapi.tokenizer import TransformersTokenizer
+
 # yapf: disable
-from .openai_protocol import (ChatCompletionLogProbs,
-                              ChatCompletionLogProbsContent,
-                              ChatCompletionNamedToolChoiceParam,
-                              ChatCompletionRequest, ChatCompletionResponse,
-                              ChatCompletionResponseChoice,
-                              ChatCompletionResponseStreamChoice,
-                              ChatCompletionStreamResponse,
-                              ChatCompletionToolsParam, ChatMessage,
-                              CompletionRequest, CompletionResponse,
-                              CompletionResponseChoice,
-                              CompletionResponseStreamChoice,
-                              CompletionStreamResponse, DeltaMessage,
-                              FunctionCall, StreamOptions, ToolCall, UsageInfo,
-                              to_disaggregated_params)
+from .openai_protocol import (
+    ChatCompletionLogProbs,
+    ChatCompletionLogProbsContent,
+    ChatCompletionNamedToolChoiceParam,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
+    ChatCompletionToolsParam,
+    ChatMessage,
+    CompletionRequest,
+    CompletionResponse,
+    CompletionResponseChoice,
+    CompletionResponseStreamChoice,
+    CompletionStreamResponse,
+    DeltaMessage,
+    FunctionCall,
+    StreamOptions,
+    ToolCall,
+    UsageInfo,
+    to_disaggregated_params,
+)
 
 # yapf: enale
 
